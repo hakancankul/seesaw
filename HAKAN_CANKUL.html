@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Seesaw Simulation</title>
     <style>
-        /* BASE STYLE */
+        /* GLOBAL STYLES */
 
         * {
             box-sizing: border-box;
@@ -24,7 +24,9 @@
             overflow-x: hidden;
         }
 
+
         /* STATS SECTION */
+
         .stats-container {
             display: flex;
             flex-wrap: wrap;
@@ -47,6 +49,7 @@
             align-items: center;
 
         }
+
 
         /* STATS COLORS */
 
@@ -101,7 +104,9 @@
             color: #64748b;
         }
 
+
         /* SIMULATION AREA */
+
         main {
             flex-grow: 1;
             display: flex;
@@ -180,7 +185,9 @@
 
         }
 
+
         /* CONTROLS */
+
         .controls {
             margin: 2rem 0;
             text-align: center;
@@ -206,7 +213,9 @@
             background-color: #334155;
         }
 
+
         /* WEIGHT OBJECTS */
+
         .weight-object {
             position: absolute;
             bottom: 14px;
@@ -256,7 +265,9 @@
             white-space: nowrap;
         }
 
+
         /* --- LOG SECTION --- */
+
         #log-container {
             width: 100%;
             max-width: 56rem;
@@ -281,6 +292,9 @@
             display: flex;
             align-items: center;
         }
+
+
+        /* LOG COLORS */
 
         .log-entry.left {
             border-left-color: #3b82f6;
@@ -345,7 +359,7 @@
 
 
         <div class="controls">
-            <button onclick="resetSimulation()" class="btn-reset"> ↩ Reset Seesaw</button>
+            <button id="reset-button" class="btn-reset"> ↩ Reset Seesaw</button>
         </div>
     </main>
 
@@ -358,290 +372,176 @@
 
 
     <script>
-
-        // --- Configuration & State ---
+        // ============================================================================
+        // CONSTANTS/CONFIGURATION
+        // ============================================================================
         const MAX_ANGLE = 30; // Degrees
         const TORQUE_DIVISOR = 10; // Controls sensitivity (as per requirements)
+        const MIN_WEIGHT = 1; // Min weight
+        const MAX_WEIGHT = 10; // Max weight
+        const BASE_SIZE = 30; // Base size for weight objects
+        const SIZE_MULTIPLIER = 2; // Size increase per weight unit
+        const MAX_LOG_ENTRIES = 10; // Max log entries to display
+        const STORAGE_KEY = 'seesawState'; // LocalStorage key
+        DISTANCE_SCALE = 10; // Scale factor for distance to torque calculation
+        const WEIGHT_COLORS = [
+            '#ef4444', '#f97316', '#f59e0b', '#84cc16', '#10b981',
+            '#06b6d4', '#3b82f6', '#6366f1', '#8b5cf6', '#d946ef'
+        ];
 
-        // State Array: Stores { id, weight, distance, side, cssLeft }
-        let objects = [];
-        let nextWeight = Math.floor(Math.random() * 10) + 1; // Initial next weight
+        // ============================================================================
+        // VARIABLES
+        // ============================================================================
+        let objects = [];// Weight objects on the plank
+        let nextWeight = 1; // Initial next weight       
         let previewElement = null; // For weight preview on plank
 
-        //DOM Elements
+        // ============================================================================
+        // DOM ELEMENTS
+        // ============================================================================
         const plankEl = document.getElementById('plank');
-        const uiLeftWeight = document.getElementById('left-weight');
-        const uiRightWeight = document.getElementById('right-weight');
-        const uiLeftTorque = document.getElementById('left-torque');
-        const uiRightTorque = document.getElementById('right-torque');
-        const uiAngle = document.getElementById('angle-display');
-        const uiNextWeight = document.getElementById('next-weight');
-        const logContainer = document.getElementById('log-container');
-        const logEmptyMessage = document.getElementById('log-empty-message');
+        const leftWeightEl = document.getElementById('left-weight');
+        const rightWeightEl = document.getElementById('right-weight');
+        const leftTorqueEl = document.getElementById('left-torque');
+        const rightTorqueEl = document.getElementById('right-torque');
+        const angleDisplayEl = document.getElementById('angle-display');
+        const nextWeightEl = document.getElementById('next-weight');
+        const logContainerEl = document.getElementById('log-container');
+        const resetButtonEl = document.getElementById('reset-button');
 
 
-        // -- Initialization ---
+        // ============================================================================
+        // HELPER FUNCTIONS
+        // ============================================================================
 
-        window.onload = function () {
-            loadState();
-            render();
-            updateNextWeightDisplay();
+        // Generate random weight
+        function generateRandomWeight() {
+            return Math.floor(Math.random() * (MAX_WEIGHT - MIN_WEIGHT + 1)) + MIN_WEIGHT;
+        }
 
+        // Generate random color
+        function getRandomColor() {
+            const index = Math.floor(Math.random() * WEIGHT_COLORS.length);
+            return WEIGHT_COLORS[index];
+        }
 
-            // Add event listeners to the plank
-            plankEl.addEventListener('click', handlePlankClick);
-            plankEl.addEventListener('mousemove', handlePlankMouseMove);// For preview
-            plankEl.addEventListener('mouseleave', handlePlankMouseLeave);
-        };
-
-        function handlePlankClick(e) {
-
-            removePreview();
-
-            //Calculate position
-            let distanceFromCenter = calculatePositionFromEvent(e);
-
-            const weight = nextWeight;// Use the predetermined next weight
-
-
-            const newObj = {
-                id: Date.now(),
-                weight: weight, // Random weight between 1-10 kg
-                distance: Math.abs(distanceFromCenter), // For calculate torque
-                rawDistance: distanceFromCenter, // For which side (left/right)
-                color: getRandomColor()// Random color for each object
+        // Get current rotation angle of an element in degrees
+        function getCurrentRotation(element) {
+            const style = globalThis.getComputedStyle(element, null);
+            const transform = style.getPropertyValue("-webkit-transform") ||
+                style.getPropertyValue("-moz-transform") ||
+                style.getPropertyValue("-ms-transform") ||
+                style.getPropertyValue("-o-transform") ||
+                style.getPropertyValue("transform") ||
+                "none";
+            if (transform === 'none') {
+                return 0;
             }
 
-            objects.push(newObj);
-
-            // Update system
-            nextWeight = Math.floor(Math.random() * 10) + 1;// New random weight for next
-            saveState();
-            render();
-            updateNextWeightDisplay();
-
+            const values = transform.split('(')[1].split(')')[0].split(',');
+            const a = Number.parseFloat(values[0]);// Get cosθ
+            const b = Number.parseFloat(values[1]);// Get sinθ
+            return Math.round(Math.atan2(b, a) * (180 / Math.PI));
 
         }
 
-
-        function render() {
-
-            const existingEl = plankEl.querySelectorAll(`.weight-object`);// Clear existing visual objects
-            existingEl.forEach(el => el.remove());
-
-            //Render objects
-            objects.forEach(obj => {
-
-                const objEl = document.createElement('div');// Create object element
-                objEl.className = 'weight-object';
-                objEl.style.backgroundColor = obj.color;// Set background color
-                objEl.style.left = `calc(50% + ${obj.rawDistance}px)`;// Position based on distance from center
-
-                const size = 30 + obj.weight * 2;// Size based on weight (dynamic size)
-                objEl.style.width = `${size}px`;
-                objEl.style.height = `${size}px`;
-
-                objEl.innerHTML = `
-                ${obj.weight}
-                <div class="weight-indicator">${obj.weight} kg</div>`;
-
-                plankEl.appendChild(objEl);// Add to plank        
-
-            });
-
-            //Physics Calculation
-            let leftTorque = 0;
-            let rightTorque = 0;
-            let leftWeight = 0;
-            let rightWeight = 0;
-
-            objects.forEach(obj => {
-                // Torque = weight * distance
-                // pixel == distance                 
-                const visualDistance = obj.distance / TORQUE_DIVISOR;
-
-                if (obj.rawDistance < 0) {
-                    // Left side
-                    leftWeight += obj.weight;
-                    leftTorque += obj.weight * visualDistance;
-
-                } else {
-                    // Right side
-                    rightWeight += obj.weight;
-                    rightTorque += obj.weight * visualDistance;
-
-                }
-            });
-
-            let angle;
-            if (leftWeight > 0 && rightWeight === 0) {
-                // Only left side has weight - rotate to maximum left angle
-                angle = -MAX_ANGLE;
-            } else if (rightWeight > 0 && leftWeight === 0) {
-                // Only right side has weight - rotate to maximum right angle
-                angle = MAX_ANGLE;
-            } else {
-                // Both sides have weight or no weight - calculate based on torque difference
-                // Angle calculation formula: (rightTorque - leftTorque) /  10
-                const torqueDiff = rightTorque - leftTorque;
-                angle = torqueDiff / TORQUE_DIVISOR;
-                // Clamp angle
-                angle = Math.max(-MAX_ANGLE, Math.min(MAX_ANGLE, angle));
-            }
+        function calculateDistanceFromEvent(e) {
+            const rect = plankEl.getBoundingClientRect();// Get plank position
+            const centerX = rect.left + rect.width / 2;// Center X of plank
+            const eventX = e.clientX;// Mouse X position
+            let distanceFromCenter = eventX - centerX;// Distance from center in pixels
 
 
-            // Update UI
-            plankEl.style.transform = `translate(-50%, 0) rotate(${angle}deg)`;
+            const currentRotation = getCurrentRotation(plankEl);
+            const radians = currentRotation * (Math.PI / 180); // Convert to radians
+            const scaleFactor = 1 / Math.cos(radians);// Calculate scale factor based on rotation
+            distanceFromCenter = distanceFromCenter * scaleFactor;// Adjust distance based on rotation
 
-            uiLeftWeight.textContent = leftWeight;
-            uiRightWeight.textContent = rightWeight;
-            uiLeftTorque.textContent = Math.round(leftTorque);
-            uiRightTorque.textContent = Math.round(rightTorque);
-            uiAngle.textContent = Math.round(angle);
-
-
-            //LOG UPDATE
-            // Update Log
-            const existingLogs = logContainer.querySelectorAll('.log-entry');
-            existingLogs.forEach(log => log.remove());
-
-            // Hide empty message if there are objects
-            if (logEmptyMessage) {
-                logEmptyMessage.style.display = objects.length > 0 ? 'none' : 'block';
-            }
-
-            // Sort objects by id (newest first) and render log entries
-            const sortedObjects = [...objects].sort((a, b) => b.id - a.id);
-
-            // Limit to last 50 entries
-            const objectsToShow = sortedObjects.slice(0, 50);
-
-            objectsToShow.forEach(obj => {
-                const side = obj.rawDistance < 0 ? 'left' : 'right';
-
-                const logEntry = document.createElement('div');
-                logEntry.className = `log-entry ${side}`;
-
-                logEntry.innerHTML = `                    
-                    <span><strong>${obj.weight}kg</strong> dropped on <strong>${side} side</strong></span>
-                `;
-
-                logContainer.appendChild(logEntry);
-            });
-
-            // Scroll to top to show the newest log
-            logContainer.scrollTop = 0;
-
-        }
-
-        function calculatePositionFromEvent(e) {
-            const rect = plankEl.getBoundingClientRect();// plank bounding box
-            const centerX = rect.left + rect.width / 2;// plank center X position
-            const eventX = e.clientX;// mouse X position
-
-            let distanceFromCenter = eventX - centerX;
-
-            const currentRotation = getComputedRotation(plankEl);// Normalize this distance to the plank's un-rotated width
-            const scaleFactor = 1 / Math.cos(currentRotation * (Math.PI / 180));
-
-            distanceFromCenter = distanceFromCenter * scaleFactor; // Adjust distance based on rotation
-
-            const maxDist = (plankEl.offsetWidth / 2) - 20;
-            if (distanceFromCenter > maxDist) distanceFromCenter = maxDist;
-            if (distanceFromCenter < -maxDist) distanceFromCenter = -maxDist;
-
+            // Clamp distance to plank edges minus some padding
+            const maxDistance = (plankEl.offsetWidth / 2) - 20;
+            if (distanceFromCenter > maxDistance) distanceFromCenter = maxDistance;
+            if (distanceFromCenter < -maxDistance) distanceFromCenter = -maxDistance;
 
             console.log('Calculated distance from center:', distanceFromCenter);
 
             return distanceFromCenter;
         }
 
+        // ============================================================================
+        // LOCALSTORAGE FUNCTIONS
+        // ============================================================================
 
-        function getRandomColor() {
-            const colors = [
-                '#ef4444', // Red
-                '#f97316', // Orange
-                '#f59e0b', // Amber
-                '#84cc16', // Lime
-                '#10b981', // Emerald
-                '#06b6d4', // Cyan
-                '#3b82f6', // Blue
-                '#6366f1', // Indigo
-                '#8b5cf6', // Violet
-                '#d946ef'  // Fuchsia
-            ];
-            return colors[Math.floor(Math.random() * colors.length)];
+        function saveState() {
+            try {
+                localStorage.setItem('seesawState', JSON.stringify(objects));
+            } catch (e) {
+                console.error("Failed to save state", e);
+            }
+
         }
 
         function loadState() {
-            const saved = localStorage.getItem('seesawState');
-            if (saved) {
-                try {
+            try {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                if (saved) {
                     objects = JSON.parse(saved);
-                } catch (e) {
-                    console.error("Failed to load state", e);
-                    objects = [];
+                }
+            } catch (error) {
+                console.error("Failed to load state", error);
+                objects = [];
+            }
+        }
+
+        // ============================================================================
+        // PHYSICS CALCULATIONS
+        // ============================================================================
+
+        function calculateTotals() {
+            let leftWeight = 0;
+            let rightWeight = 0;
+            let leftTorque = 0;
+            let rightTorque = 0;
+
+            // Calculate totals weight and torque for each side
+            for (const obj of objects) {
+                const visualDistance = obj.distance / DISTANCE_SCALE;
+                const torque = obj.weight * visualDistance;
+
+                if (obj.rawDistance < 0) {
+                    leftWeight += obj.weight;
+                    leftTorque += torque;
+                } else {
+                    rightWeight += obj.weight;
+                    rightTorque += torque;
                 }
             }
+
+            return { leftWeight, rightWeight, leftTorque, rightTorque };
         }
 
-        function resetSimulation() {
-            objects = [];
-            nextWeight = Math.floor(Math.random() * 10) + 1;
-            saveState();
-            render();
-            updateNextWeightDisplay();
 
-        }
+        function calculateAngle(totals) {
+            const { leftWeight, rightWeight, leftTorque, rightTorque } = totals;
 
-        function updateNextWeightDisplay() {
-            if (uiNextWeight) {
-                uiNextWeight.textContent = nextWeight;
+            // If one side has weight and the other doesn't ==> max tilt
+            if (leftWeight > 0 && rightWeight === 0) {
+                return -MAX_ANGLE;
             }
+            if (rightWeight > 0 && leftWeight === 0) {
+                return MAX_ANGLE;
+            }
+
+            // Calculate torque difference if both sides have weight
+            const torqueDifference = rightTorque - leftTorque;
+            const angle = torqueDifference / TORQUE_DIVISOR;
+
+            // Clamp angle to max limits
+            return Math.max(-MAX_ANGLE, Math.min(MAX_ANGLE, angle));
         }
 
-        function saveState() {
-            localStorage.setItem('seesawState', JSON.stringify(objects));
-        }
-
-        function handlePlankMouseMove(e) {
-            const distanceFromCenter = calculatePositionFromEvent(e);
-            updatePreview(distanceFromCenter);
-        }
-
-        function handlePlankMouseLeave() {
-            removePreview();
-        }
-
-        function updatePreview(distanceFromCenter) {
-            // Remove existing preview if any
-            removePreview();
-
-            // Create preview element
-            previewElement = document.createElement('div');
-            previewElement.className = 'weight-preview';
-
-            // Use a muted color for preview
-            const previewColor = '#94a3b8'; // Slate 400
-            previewElement.style.backgroundColor = previewColor;
-
-            // Position the preview
-            previewElement.style.left = `calc(50% + ${distanceFromCenter}px)`;
-
-            // Size based on next weight
-            const size = 30 + (nextWeight * 2);
-            previewElement.style.width = `${size}px`;
-            previewElement.style.height = `${size}px`;
-
-            // Show weight
-            previewElement.innerHTML = `
-                ${nextWeight}
-                <div class="weight-indicator">${nextWeight}kg</div>
-            `;
-
-            plankEl.appendChild(previewElement);
-        }
-
+        // ============================================================================
+        // PREVIEW
+        // ============================================================================
         function removePreview() {
             if (previewElement) {
                 previewElement.remove();
@@ -649,25 +549,196 @@
             }
         }
 
-        function getComputedRotation(el) {
-            const st = window.getComputedStyle(el, null);
-            const tr = st.getPropertyValue("-webkit-transform") ||
-                st.getPropertyValue("-moz-transform") ||
-                st.getPropertyValue("-ms-transform") ||
-                st.getPropertyValue("-o-transform") ||
-                st.getPropertyValue("transform") ||
-                "none";
+        function createPreview(distanceFromCenter) {
+            // Remove existing preview if any
+            removePreview();
 
-            if (tr !== "none") {
-                const values = tr.split('(')[1].split(')')[0].split(',');
-                const a = values[0];
-                const b = values[1];
-                const angle = Math.round(Math.atan2(b, a) * (180 / Math.PI));
-                return angle;
-            }
-            return 0;
+            // Create preview element
+            const element = document.createElement('div');
+            element.className = 'weight-preview';
+            element.style.backgroundColor = '#94a3b8';  // Muted color for preview
+            element.style.left = `calc(50% + ${distanceFromCenter}px)`;// position preview
+
+            // Size based on next weight
+            const size = BASE_SIZE + (nextWeight * SIZE_MULTIPLIER);
+            element.style.width = `${size}px`;
+            element.style.height = `${size}px`;
+
+
+            // Add weight text and indicator
+            element.innerHTML = `
+                ${nextWeight}
+                <div class="weight-indicator">${nextWeight}kg</div>
+            `;
+
+            plankEl.appendChild(element);
+            previewElement = element;
         }
 
+        // ============================================================================
+        // RENDERING FUNCTIONS
+        // ============================================================================
+        // Clear existing weight objects from plank
+        function clearWeightObjects() {
+            const existing = plankEl.querySelectorAll(`.weight-object`);
+            for (const element of existing) {
+                element.remove();
+            }
+        }
+
+        // Create weight object element
+        function createWeightElement(object) {
+            const element = document.createElement('div');// Create object element
+            element.className = 'weight-object';
+            element.style.backgroundColor = object.color;// Set background color
+            element.style.left = `calc(50% + ${object.rawDistance}px)`;// Position based on distance from center
+
+            element.innerHTML = `
+                ${object.weight}
+                <div class="weight-indicator">${object.weight}kg</div>
+            `;
+
+            return element;
+        }
+
+        // Render all weight objects
+        function renderWeightObjects() {
+            for (const object of objects) {
+                const element = createWeightElement(object);
+                plankEl.appendChild(element);
+            }
+        }
+
+        // Update stats display
+        function updateStats(totals, angle) {
+            leftWeightEl.textContent = totals.leftWeight;
+            rightWeightEl.textContent = totals.rightWeight;
+            leftTorqueEl.textContent = Math.round(totals.leftTorque);
+            rightTorqueEl.textContent = Math.round(totals.rightTorque);
+            angleDisplayEl.textContent = Math.round(angle);
+        }
+
+        // Clear log entries
+        function clearLogEntries() {
+            const existing = logContainerEl.querySelectorAll('.log-entry');
+            for (const entry of existing) {
+                entry.remove();
+            }
+        }
+
+        //Create log entry element
+        function createLogEntry(object) {
+            const side = object.rawDistance < 0 ? 'left' : 'right';
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${side}`;
+            entry.innerHTML = `                
+                <span><strong>${object.weight}kg</strong> dropped on <strong>${side} side</strong></span>
+            `;
+
+            return entry;
+        }
+
+        function renderLogEntries() {
+            clearLogEntries();
+
+            const sortedObjects = [...objects]
+                .sort((a, b) => b.id - a.id)
+                .slice(0, MAX_LOG_ENTRIES);
+
+            for (const object of sortedObjects) {
+                const entry = createLogEntry(object);
+                logContainerEl.appendChild(entry);
+            }
+
+            logContainerEl.scrollTop = 0;
+        }
+
+        function render() {
+
+            clearWeightObjects();
+            renderWeightObjects();
+
+            const totals = calculateTotals();
+            const angle = calculateAngle(totals);
+            plankEl.style.transform = `translate(-50%, 0) rotate(${angle}deg)`;
+
+            updateStats(totals, angle);
+            renderLogEntries();
+        }
+
+        // ============================================================================
+        // EVENT HANDLERS
+        // ============================================================================
+        // Mouse move on plank for preview
+        function handlePlankMouseMove(e) {
+            const distanceFromCenter = calculateDistanceFromEvent(e);
+            createPreview(distanceFromCenter);
+        }
+
+        // Mouse leave plank to remove preview
+        function handlePlankMouseLeave() {
+            removePreview();
+        }
+
+        // Click on plank to add weight
+        function handlePlankClick(event) {
+            removePreview();
+
+            const distanceFromCenter = calculateDistanceFromEvent(event);
+            const newObject = {
+                weight: nextWeight,
+                distance: Math.abs(distanceFromCenter),
+                rawDistance: distanceFromCenter,
+                color: getRandomColor()
+            };
+
+            objects.push(newObject);
+            nextWeight = generateRandomWeight();
+
+            saveState();
+            render();
+            updateNextWeightDisplay();
+        }
+
+        // Reset simulation
+        function handleReset() {
+            objects = [];
+            nextWeight = generateRandomWeight();
+            saveState();
+            render();
+            updateNextWeightDisplay();
+        }
+
+        // Update next weight display
+        function updateNextWeightDisplay() {
+            if (nextWeightEl) {
+                nextWeightEl.textContent = nextWeight;
+            }
+        }
+
+        // ============================================================================
+        // INITIALIZATION
+        // ============================================================================
+        // Function to initialize the simulation
+        function initialize() {
+            loadState();
+            nextWeight = generateRandomWeight();
+            render();
+            updateNextWeightDisplay();
+
+            // Add event listeners
+            plankEl.addEventListener('click', handlePlankClick);
+            plankEl.addEventListener('mousemove', handlePlankMouseMove);
+            plankEl.addEventListener('mouseleave', handlePlankMouseLeave);
+            resetButtonEl.addEventListener('click', handleReset);
+        }
+
+        // Initialize when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initialize);
+        } else {
+            initialize();
+        }
 
     </script>
 
