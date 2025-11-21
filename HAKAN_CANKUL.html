@@ -371,9 +371,44 @@
                 ${obj.weight}
                 <div class="weight-indicator">${obj.weight} kg</div>`;
 
-                plankEl.appendChild(objEl);// Add to plank
+                plankEl.appendChild(objEl);// Add to plank        
 
             });
+
+            //Physics Calculation
+            let leftTorque = 0;
+            let rightTorque = 0;
+            let leftWeight = 0;
+            let rightWeight = 0;
+
+            objects.forEach(obj => {
+                // Torque = weight * distance
+                // pixel == distance                 
+                const visualDistance = obj.distance / TORQUE_DIVISOR;
+
+                if (obj.rawDistance < 0) {
+                    // Left side
+                    leftWeight += obj.weight;
+                    leftTorque += obj.weight * visualDistance;
+
+                } else {
+                    // Right side
+                    rightWeight += obj.weight;
+                    rightTorque += obj.weight * visualDistance;
+
+                }
+            });
+
+            // Angle calculation formula: (rightTorque - leftTorque) /  10
+            const torqueDiff = rightTorque - leftTorque;
+            let angle = torqueDiff / TORQUE_DIVISOR;
+
+            //clamp angle
+            angle = Math.max(-MAX_ANGLE, Math.min(MAX_ANGLE, angle));
+
+
+            // Update UI
+            plankEl.style.transform = `translate(-50%, 0) rotate(${angle}deg)`;
 
         }
 
