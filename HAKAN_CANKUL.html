@@ -5,6 +5,100 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Seesaw Simulation</title>
+    <style>
+        /* General Styles */
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f9ff;
+            color: #1e293b;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Stats Section */
+        .stats-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1rem;
+            padding: 1rem;
+            margin-top: 0.5rem;
+
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border-left: 4px solid;
+            min-width: 140px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+
+        }
+
+        .border-blue {
+            border-left-color: #3b82f6;
+        }
+
+        .text-blue {
+            color: #2563eb;
+        }
+
+        .border-emerald {
+            border-left-color: #10b981;
+        }
+
+        .text-emerald {
+            color: #059669;
+        }
+
+        .border-red {
+            border-left-color: #ef4444;
+        }
+
+        .text-red {
+            color: #dc2626;
+        }
+
+        .border-purple {
+            border-left-color: #a855f7;
+        }
+
+        .text-purple {
+            color: #9333ea;
+        }
+
+        .stat-card h3 {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: #94a3b8;
+            margin: 0;
+        }
+
+        .stat-value {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin: 0.25rem 0;
+        }
+
+        .stat-sub {
+            font-size: 0.75rem;
+            color: #64748b;
+        }
+    </style>
 </head>
 
 <body>
