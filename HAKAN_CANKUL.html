@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Seesaw Simulation</title>
     <style>
-        /* General Styles */
+        /* BASE STYLE */
 
         * {
             box-sizing: border-box;
@@ -24,7 +24,7 @@
             overflow-x: hidden;
         }
 
-        /* Stats Section */
+        /* STATS SECTION */
         .stats-container {
             display: flex;
             flex-wrap: wrap;
@@ -47,6 +47,8 @@
             align-items: center;
 
         }
+
+        /* STATS COLORS */
 
         .border-blue {
             border-left-color: #3b82f6;
@@ -99,7 +101,7 @@
             color: #64748b;
         }
 
-        /* Simulation Area */
+        /* SIMULATION AREA */
         main {
             flex-grow: 1;
             display: flex;
@@ -164,6 +166,7 @@
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
             z-index: 15;
             transform: translate(-50%, 0);
+            /* Initial flat position */
         }
 
         .ruler-mark {
@@ -175,11 +178,88 @@
             transform: translateX(-50%);
 
         }
+
+        /* CONTROLS */
+        .controls {
+            margin: 2rem 0;
+            text-align: center;
+            z-index: 30;
+        }
+
+        .btn-reset {
+            background-color: #1e293b;
+            color: white;
+            font-weight: 700;
+            padding: 0.5rem 1.5rem;
+            border-radius: 9999px;
+            border: none;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            transition: background-color 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-reset:hover {
+            background-color: #334155;
+        }
+
+        /* WEIGHT OBJECTS */
+        .weight-object {
+            position: absolute;
+            bottom: 14px;
+            width: 40px;
+            height: 40px;
+            transform: translateX(-50%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-weight: bold;
+            font-size: 0.8rem;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            pointer-events: none;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .weight-preview {
+            position: absolute;
+            bottom: 14px;
+            width: 40px;
+            height: 40px;
+            transform: translateX(-50%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: rgba(255, 255, 255, 0.6);
+            font-weight: bold;
+            font-size: 0.8rem;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            pointer-events: none;
+            border: 2px dashed rgba(255, 255, 255, 0.5);
+            opacity: 0.5;
+            transition: opacity 0.2s ease;
+        }
+
+        .weight-indicator {
+            position: absolute;
+            top: -25px;
+            font-size: 0.7rem;
+            color: #333;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 1px 4px;
+            border-radius: 3px;
+            white-space: nowrap;
+        }
     </style>
 </head>
 
 <body>
     <div class="stats-container">
+
         <div class="stat-card border-blue">
             <h3>Left Weight</h3>
             <div class="stat-value text-blue"><span id="left-weight">0</span> kg</div>
@@ -230,5 +310,84 @@
     <footer>
         <div id="log-container"> </div>
     </footer>
+
+    <script>
+
+        // --- Configuration & State ---
+        const MAX_ANGLE = 30; // Degrees
+        const TORQUE_DIVISOR = 10; // Controls sensitivity (as per requirements)
+
+        // State Array: Stores { id, weight, distance, side, cssLeft }
+        let objects = [];
+
+        //DOM Elements
+        const plankEl = document.getElementById('plank');
+        const uiLeftWeight = document.getElementById('left-weight');
+        const uiRightWeight = document.getElementById('right-weight');
+        const uiLeftTorque = document.getElementById('left-torque');
+        const uiRightTorque = document.getElementById('right-torque');
+        const uiAngle = document.getElementById('angle-display');
+        const uiNextWeight = document.getElementById('next-weight');
+
+
+        // Add event listeners to the plank
+        plankEl.addEventListener('click', handlePlankClick);
+
+
+        function handlePlankClick(e) {
+
+            //Calculate position
+            let distanceFromCenter = calculatePositionFromEvent(e);
+
+            const newObj = {
+                id: Date.now(),
+                weight: Math.floor(Math.random() * 10) + 1, // Random weight between 1-10 kg
+                distance: Math.abs(distanceFromCenter), // For calculate torque
+                rawDistance: distanceFromCenter, // For which side (left/right)
+                color: getRandomColor()// Random color for each object
+            }
+
+            console.log('Adding object:', newObj);
+            objects.push(newObj);
+
+        }
+
+
+        function calculatePositionFromEvent(e) {
+            const rect = plankEl.getBoundingClientRect();// plank bounding box
+            const centerX = rect.left + rect.width / 2;// plank center X position
+            const eventX = e.clientX;// mouse X position
+
+            let distanceFromCenter = eventX - centerX;
+
+
+            console.log('Calculated distance from center:', distanceFromCenter);
+
+            return distanceFromCenter;
+        }
+
+
+        function getRandomColor() {
+            const colors = [
+                '#ef4444', // Red
+                '#f97316', // Orange
+                '#f59e0b', // Amber
+                '#84cc16', // Lime
+                '#10b981', // Emerald
+                '#06b6d4', // Cyan
+                '#3b82f6', // Blue
+                '#6366f1', // Indigo
+                '#8b5cf6', // Violet
+                '#d946ef'  // Fuchsia
+            ];
+            return colors[Math.floor(Math.random() * colors.length)];
+        }
+
+
+
+
+
+
+    </script>
 
 </html>
