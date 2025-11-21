@@ -165,6 +165,16 @@
             z-index: 15;
             transform: translate(-50%, 0);
         }
+
+        .ruler-mark {
+            position: absolute;
+            top: 2px;
+            width: 1px;
+            height: 6px;
+            background-color: rgba(255, 255, 255, 0.4);
+            transform: translateX(-50%);
+
+        }
     </style>
 </head>
 
@@ -195,10 +205,20 @@
     </div>
 
     <main>
-        <div id="simulation-area">            
+        <div id="simulation-area">
             <div id="pivot-stand"></div>
             <div id="pivot-point"></div>
-            <div id="plank"></div>
+            <div id="plank">
+                <div class="ruler-mark" style="left: 10%"></div>
+                <div class="ruler-mark" style="left: 20%"></div>
+                <div class="ruler-mark" style="left: 30%"></div>
+                <div class="ruler-mark" style="left: 40%"></div>
+                <div class="ruler-mark" style="left: 50%; height: 10px; background: rgba(255,255,255,0.8);"></div>
+                <div class="ruler-mark" style="left: 60%"></div>
+                <div class="ruler-mark" style="left: 70%"></div>
+                <div class="ruler-mark" style="left: 80%"></div>
+                <div class="ruler-mark" style="left: 90%"></div>
+            </div>
         </div>
 
 
