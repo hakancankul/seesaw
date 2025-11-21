@@ -98,6 +98,73 @@
             font-size: 0.75rem;
             color: #64748b;
         }
+
+        /* Simulation Area */
+        main {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            background-color: #f8fafc;
+        }
+
+        #simulation-area {
+            position: relative;
+            height: 400px;
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            user-select: none;
+        }
+
+        #pivot-stand {
+            position: absolute;
+            bottom: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 20px solid transparent;
+            border-right: 20px solid transparent;
+            border-bottom: 80px solid #475569;
+            z-index: 10;
+
+        }
+
+        #pivot-point {
+            position: absolute;
+            bottom: 120px;
+            left: 50%;
+            width: 16px;
+            height: 16px;
+            background-color: #1e293b;
+            border-radius: 50%;
+            transform: translate(-50%, 50%);
+            z-index: 20;
+        }
+
+        #plank {
+            position: absolute;
+            bottom: 120px;
+            left: 50%;
+            width: 90%;
+            max-width: 600px;
+            height: 14px;
+            background: linear-gradient(to bottom, #8B4513, #5D4037);
+            border-radius: 4px;
+            transform-origin: center center;
+            transition: transform 0.7s cubic-bezier(0.25, 1, 0.5, 1);
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            z-index: 15;
+            transform: translate(-50%, 0);
+        }
     </style>
 </head>
 
@@ -126,5 +193,22 @@
         </div>
 
     </div>
+
+    <main>
+        <div id="simulation-area">            
+            <div id="pivot-stand"></div>
+            <div id="pivot-point"></div>
+            <div id="plank"></div>
+        </div>
+
+
+        <div class="controls">
+            <button onclick="resetSimulation()" class="btn-reset"> ↩ Reset Seesaw</button>
+        </div>
+    </main>
+
+    <footer>
+        <div id="log-container"> </div>
+    </footer>
 
 </html>
