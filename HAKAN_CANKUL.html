@@ -349,9 +349,33 @@
 
             console.log('Adding object:', newObj);
             objects.push(newObj);
+            render();
 
         }
 
+
+        function render() {
+            //Render objects
+            objects.forEach(obj => {
+
+                const objEl = document.createElement('div');// Create object element
+                objEl.className = 'weight-object';
+                objEl.style.backgroundColor = obj.color;// Set background color
+                objEl.style.left = `calc(50% + ${obj.rawDistance}px)`;// Position based on distance from center
+
+                const size = 30 + obj.weight * 2;// Size based on weight (dynamic size)
+                objEl.style.width = `${size}px`;
+                objEl.style.height = `${size}px`;
+
+                objEl.innerHTML = `
+                ${obj.weight}
+                <div class="weight-indicator">${obj.weight} kg</div>`;
+
+                plankEl.appendChild(objEl);// Add to plank
+
+            });
+
+        }
 
         function calculatePositionFromEvent(e) {
             const rect = plankEl.getBoundingClientRect();// plank bounding box
