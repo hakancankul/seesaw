@@ -426,12 +426,21 @@
                 }
             });
 
-            // Angle calculation formula: (rightTorque - leftTorque) /  10
-            const torqueDiff = rightTorque - leftTorque;
-            let angle = torqueDiff / TORQUE_DIVISOR;
-
-            //clamp angle
-            angle = Math.max(-MAX_ANGLE, Math.min(MAX_ANGLE, angle));
+            let angle;
+            if (leftWeight > 0 && rightWeight === 0) {
+                // Only left side has weight - rotate to maximum left angle
+                angle = -MAX_ANGLE;
+            } else if (rightWeight > 0 && leftWeight === 0) {
+                // Only right side has weight - rotate to maximum right angle
+                angle = MAX_ANGLE;
+            } else {
+                // Both sides have weight or no weight - calculate based on torque difference
+                // Angle calculation formula: (rightTorque - leftTorque) /  10
+                const torqueDiff = rightTorque - leftTorque;
+                angle = torqueDiff / TORQUE_DIVISOR;
+                // Clamp angle
+                angle = Math.max(-MAX_ANGLE, Math.min(MAX_ANGLE, angle));
+            }
 
 
             // Update UI
