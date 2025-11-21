@@ -321,6 +321,7 @@
         // State Array: Stores { id, weight, distance, side, cssLeft }
         let objects = [];
         let nextWeight = Math.floor(Math.random() * 10) + 1; // Initial next weight
+        let previewElement = null; // For weight preview on plank
 
         //DOM Elements
         const plankEl = document.getElementById('plank');
@@ -344,9 +345,6 @@
             plankEl.addEventListener('click', handlePlankClick);
         };
 
-
-
-
         function handlePlankClick(e) {
 
             //Calculate position
@@ -363,9 +361,7 @@
                 color: getRandomColor()// Random color for each object
             }
 
-            console.log('Adding object:', newObj);
             objects.push(newObj);
-
 
             // Update system
             nextWeight = Math.floor(Math.random() * 10) + 1;// New random weight for next
@@ -381,7 +377,6 @@
 
             const existingEl = document.querySelectorAll(`.weight-object`);// Clear existing visual objects
             existingEl.forEach(el => el.remove());
-
 
             //Render objects
             objects.forEach(obj => {
@@ -453,6 +448,15 @@
 
             let distanceFromCenter = eventX - centerX;
 
+            const currentRotation = getComputedRotation(plankEl);// Normalize this distance to the plank's un-rotated width
+            const scaleFactor = 1 / Math.cos(currentRotation * (Math.PI / 180));
+
+            distanceFromCenter = distanceFromCenter * scaleFactor; // Adjust distance based on rotation
+
+            const maxDist = (plankEl.offsetWidth / 2) - 20;
+            if (distanceFromCenter > maxDist) distanceFromCenter = maxDist;
+            if (distanceFromCenter < -maxDist) distanceFromCenter = -maxDist;
+
 
             console.log('Calculated distance from center:', distanceFromCenter);
 
@@ -508,8 +512,24 @@
             localStorage.setItem('seesawState', JSON.stringify(objects));
         }
 
+        function getComputedRotation(el) {
+            const st = window.getComputedStyle(el, null);
+            const tr = st.getPropertyValue("-webkit-transform") ||
+                st.getPropertyValue("-moz-transform") ||
+                st.getPropertyValue("-ms-transform") ||
+                st.getPropertyValue("-o-transform") ||
+                st.getPropertyValue("transform") ||
+                "none";
 
-
+            if (tr !== "none") {
+                const values = tr.split('(')[1].split(')')[0].split(',');
+                const a = values[0];
+                const b = values[1];
+                const angle = Math.round(Math.atan2(b, a) * (180 / Math.PI));
+                return angle;
+            }
+            return 0;
+        }
 
 
 
