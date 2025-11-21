@@ -162,6 +162,7 @@
             border-radius: 4px;
             transform-origin: center center;
             transition: transform 0.7s cubic-bezier(0.25, 1, 0.5, 1);
+            /* Smooth easing */
             cursor: pointer;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
             z-index: 15;
@@ -490,7 +491,10 @@
         function resetSimulation() {
             objects = [];
             nextWeight = Math.floor(Math.random() * 10) + 1;
+            saveState();
             render();
+            updateNextWeightDisplay();
+
         }
 
         function updateNextWeightDisplay() {
