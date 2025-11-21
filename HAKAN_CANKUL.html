@@ -343,9 +343,13 @@
 
             // Add event listeners to the plank
             plankEl.addEventListener('click', handlePlankClick);
+            plankEl.addEventListener('mousemove', handlePlankMouseMove);// For preview
+            plankEl.addEventListener('mouseleave', handlePlankMouseLeave);
         };
 
         function handlePlankClick(e) {
+
+            removePreview();
 
             //Calculate position
             let distanceFromCenter = calculatePositionFromEvent(e);
@@ -375,7 +379,7 @@
 
         function render() {
 
-            const existingEl = document.querySelectorAll(`.weight-object`);// Clear existing visual objects
+            const existingEl = plankEl.querySelectorAll(`.weight-object`);// Clear existing visual objects
             existingEl.forEach(el => el.remove());
 
             //Render objects
@@ -507,9 +511,53 @@
             }
         }
 
-
         function saveState() {
             localStorage.setItem('seesawState', JSON.stringify(objects));
+        }
+
+        function handlePlankMouseMove(e) {
+            const distanceFromCenter = calculatePositionFromEvent(e);
+            updatePreview(distanceFromCenter);
+        }
+
+        function handlePlankMouseLeave() {
+            removePreview();
+        }
+
+        function updatePreview(distanceFromCenter) {
+            // Remove existing preview if any
+            removePreview();
+
+            // Create preview element
+            previewElement = document.createElement('div');
+            previewElement.className = 'weight-preview';
+
+            // Use a muted color for preview
+            const previewColor = '#94a3b8'; // Slate 400
+            previewElement.style.backgroundColor = previewColor;
+
+            // Position the preview
+            previewElement.style.left = `calc(50% + ${distanceFromCenter}px)`;
+
+            // Size based on next weight
+            const size = 30 + (nextWeight * 2);
+            previewElement.style.width = `${size}px`;
+            previewElement.style.height = `${size}px`;
+
+            // Show weight
+            previewElement.innerHTML = `
+                ${nextWeight}
+                <div class="weight-indicator">${nextWeight}kg</div>
+            `;
+
+            plankEl.appendChild(previewElement);
+        }
+
+        function removePreview() {
+            if (previewElement) {
+                previewElement.remove();
+                previewElement = null;
+            }
         }
 
         function getComputedRotation(el) {
