@@ -319,6 +319,7 @@
 
         // State Array: Stores { id, weight, distance, side, cssLeft }
         let objects = [];
+        let nextWeight = Math.floor(Math.random() * 10) + 1; // Initial next weight
 
         //DOM Elements
         const plankEl = document.getElementById('plank');
@@ -330,8 +331,19 @@
         const uiNextWeight = document.getElementById('next-weight');
 
 
-        // Add event listeners to the plank
-        plankEl.addEventListener('click', handlePlankClick);
+        // -- Initialization ---
+
+        window.onload = function () {
+            loadState();
+            render();
+            updateNextWeightDisplay();
+
+
+            // Add event listeners to the plank
+            plankEl.addEventListener('click', handlePlankClick);
+        };
+
+
 
 
         function handlePlankClick(e) {
@@ -339,9 +351,12 @@
             //Calculate position
             let distanceFromCenter = calculatePositionFromEvent(e);
 
+            const weight = nextWeight;// Use the predetermined next weight
+
+
             const newObj = {
                 id: Date.now(),
-                weight: Math.floor(Math.random() * 10) + 1, // Random weight between 1-10 kg
+                weight: weight, // Random weight between 1-10 kg
                 distance: Math.abs(distanceFromCenter), // For calculate torque
                 rawDistance: distanceFromCenter, // For which side (left/right)
                 color: getRandomColor()// Random color for each object
@@ -349,12 +364,24 @@
 
             console.log('Adding object:', newObj);
             objects.push(newObj);
+
+
+            // Update system
+            nextWeight = Math.floor(Math.random() * 10) + 1;// New random weight for next
+            saveState();
             render();
+            updateNextWeightDisplay();
+
 
         }
 
 
         function render() {
+
+            const existingEl = document.querySelectorAll(`.weight-object`);// Clear existing visual objects
+            existingEl.forEach(el => el.remove());
+
+
             //Render objects
             objects.forEach(obj => {
 
@@ -410,6 +437,12 @@
             // Update UI
             plankEl.style.transform = `translate(-50%, 0) rotate(${angle}deg)`;
 
+            uiLeftWeight.textContent = leftWeight;
+            uiRightWeight.textContent = rightWeight;
+            uiLeftTorque.textContent = Math.round(leftTorque);
+            uiRightTorque.textContent = Math.round(rightTorque);
+            uiAngle.textContent = Math.round(angle);
+
         }
 
         function calculatePositionFromEvent(e) {
@@ -440,6 +473,35 @@
                 '#d946ef'  // Fuchsia
             ];
             return colors[Math.floor(Math.random() * colors.length)];
+        }
+
+        function loadState() {
+            const saved = localStorage.getItem('seesawState');
+            if (saved) {
+                try {
+                    objects = JSON.parse(saved);
+                } catch (e) {
+                    console.error("Failed to load state", e);
+                    objects = [];
+                }
+            }
+        }
+
+        function resetSimulation() {
+            objects = [];
+            nextWeight = Math.floor(Math.random() * 10) + 1;
+            render();
+        }
+
+        function updateNextWeightDisplay() {
+            if (uiNextWeight) {
+                uiNextWeight.textContent = nextWeight;
+            }
+        }
+
+
+        function saveState() {
+            localStorage.setItem('seesawState', JSON.stringify(objects));
         }
 
 
