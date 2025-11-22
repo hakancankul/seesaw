@@ -734,10 +734,11 @@
         //Create log entry element
         function createLogEntry(object) {
             const side = object.rawDistance < 0 ? 'left' : 'right';
+            const distance = Math.abs(object.rawDistance);
             const entry = document.createElement('div');
             entry.className = `log-entry ${side}`;
             entry.innerHTML = `                
-                <span><strong>${object.weight}kg</strong> dropped on <strong>${side} side</strong></span>
+                <span><strong>${object.weight}kg</strong> dropped on <strong>${side} side</strong> at <strong>${Math.round(distance)}px</strong> from center</span>
             `;
 
             return entry;
