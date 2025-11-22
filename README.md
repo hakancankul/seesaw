@@ -58,9 +58,9 @@ Where:
 - **TORQUE_DIVISOR**: 10 (controls rotation sensitivity)
 - **MAX_ANGLE**: ±30° (maximum rotation limit)
 
-### Trade-off Limitations
+#Trade-off Limitations
 
-When the board was tilted, especially at high angles, there were deviations from the position I clicked when adding a new object due to perspective. I thought about this for a while and came up with a trigonometric solution. Firstly, getCurrentRotation() fonksiyonu ile dönüş açısını derece cinsinden aldım ve trigonometrik hesaplamalar için radyan cinsine dönüştürdüm
+When the board was tilted, especially at high angles, there were deviations from the position I clicked when adding a new object due to perspective. I thought about this for a while and came up with a trigonometric solution. Firstly, with the getCurrentRotation() function I got the rotation angle in degrees and converted it to radians for trigonometric calculations
 
 ```javascript
 const currentRotation = getCurrentRotation(plankEl);
