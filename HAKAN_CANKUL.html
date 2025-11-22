@@ -702,25 +702,17 @@
                 const currentAngle = getCurrentRotation(plankEl);
                 plankEl.style.transform = `translate(-50%, 0) rotate(${currentAngle}deg)`;
 
-                
                 // Plank will rotate after animation
                 updateStats(totals, angle);
 
-                // Find the newly added weight element and wait for animation to finish
-                const weightElements = plankEl.querySelectorAll('.weight-object');
-                const newWeightElement = weightElements[weightElements.length - 1];
+                // Animate plank rotation after weight fall
+                const ANIMATION_DURATION = 600; // 0.6s in milliseconds
+                const ROTATION_START_DELAY = ANIMATION_DURATION * 0.5; // Start at 85% of animation
 
-                if (newWeightElement) {
-                    const handleAnimationEnd = () => {
-                        // Update plank rotation after weight lands
-                        plankEl.style.transform = `translate(-50%, 0) rotate(${angle}deg)`;
-                        newWeightElement.removeEventListener('animationend', handleAnimationEnd);
-                    };
-                    newWeightElement.addEventListener('animationend', handleAnimationEnd);
-                } else {
-                    // Fallback: update immediately if element not found
+                setTimeout(() => {
+                    // Update plank rotation when weight hits plank
                     plankEl.style.transform = `translate(-50%, 0) rotate(${angle}deg)`;
-                }
+                }, ROTATION_START_DELAY);
             } else {
                 // For existing weights, update immediately
                 plankEl.style.transform = `translate(-50%, 0) rotate(${angle}deg)`;
