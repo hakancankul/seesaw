@@ -24,6 +24,7 @@ This simulation allows users to add weights to a seesaw plank by clicking on it.
 - **Responsive Design**: Modern, clean UI with color-coded statistics
 
 ## How to Use
+You can open and test the project from this link: [Seesaw Simulation](https://hakancankul.github.io/seesaw/HAKAN_CANKUL.html)
 
 1. **Add Weight**: Move your mouse over the plank to see a preview, then click to drop the weight
 2. **View Statistics**: Check the dashboard at the top to see weight totals, torque values, and current angle
