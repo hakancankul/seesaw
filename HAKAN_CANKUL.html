@@ -254,6 +254,7 @@
             transition: opacity 0.2s ease;
         }
 
+
         .weight-indicator {
             position: absolute;
             top: -25px;
@@ -263,6 +264,38 @@
             padding: 1px 4px;
             border-radius: 3px;
             white-space: nowrap;
+        }
+
+        .distance-line {
+            position: absolute;
+            bottom: 34px;
+            left: 50%;
+            height: 2px;
+            background: repeating-linear-gradient(
+                to right,
+                rgba(148, 163, 184, 0.5) 0px,
+                rgba(148, 163, 184, 0.5) 8px,
+                transparent 8px,
+                transparent 16px
+            );
+            transform-origin: left center;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .distance-indicator {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.65rem;
+            color: rgba(100, 116, 139, 0.7);
+            background: rgba(255, 255, 255, 0.6);
+            padding: 2px 4px;
+            border-radius: 3px;
+            white-space: nowrap;
+            pointer-events: none;
+            z-index: 6;
         }
 
         @keyframes fallDown {
@@ -412,6 +445,8 @@
         let objects = [];// Weight objects on the plank
         let nextWeight = 1; // Initial next weight       
         let previewElement = null; // For weight preview on plank
+        let previewDistanceLineElement = null;// For distance line preview on plank
+        let previewDistanceTextElement = null;// For distance text preview on plank
 
         // ============================================================================
         // DOM ELEMENTS
@@ -560,10 +595,20 @@
         // ============================================================================
         // PREVIEW
         // ============================================================================
+
+
         function removePreview() {
             if (previewElement) {
                 previewElement.remove();
                 previewElement = null;
+            }
+            if (previewDistanceLineElement) {
+                previewDistanceLineElement.remove();
+                previewDistanceLineElement = null;
+            }
+            if (previewDistanceTextElement) {
+                previewDistanceTextElement.remove();
+                previewDistanceTextElement = null;
             }
         }
 
@@ -591,6 +636,39 @@
 
             plankEl.appendChild(element);
             previewElement = element;
+
+            // Create distance line and text from center to preview position
+            if (Math.abs(distanceFromCenter) > 0) {
+                const lineElement = document.createElement('div');
+                lineElement.className = 'distance-line';
+
+                // Calculate line length and angle
+                const lineLength = Math.abs(distanceFromCenter);
+                const angle = distanceFromCenter > 0 ? 0 : 180;
+
+                lineElement.style.width = `${lineLength}px`;
+                lineElement.style.transform = `rotate(${angle}deg)`;
+
+                plankEl.appendChild(lineElement);
+                previewDistanceLineElement = lineElement;
+
+                // Create distance text at the midpoint of the line
+                const distanceTextElement = document.createElement('div');
+                distanceTextElement.className = 'distance-indicator';
+
+                // Calculate distance in a readable format (convert pixels to a unit)
+                const distanceValue = Math.abs(distanceFromCenter);
+                const distanceText = `${Math.round(distanceValue)}px`;
+
+                distanceTextElement.textContent = distanceText;
+
+                // Position text at midpoint
+                const midpointOffset = distanceFromCenter / 2;
+                distanceTextElement.style.left = `calc(50% + ${midpointOffset}px)`;
+
+                plankEl.appendChild(distanceTextElement);
+                previewDistanceTextElement = distanceTextElement;
+            }
         }
 
         // ============================================================================
