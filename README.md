@@ -41,28 +41,27 @@ You can open and test the project using this link: [Seesaw Simulation](https://h
 ---
 
 ## 🔬 Physics and Calculations
-
 The simulation applies physical principles using simplified formulas.
 
 ### Torque Calculation
-
 Torque (Moment of Force) is calculated as:
+```
+Torque = Weight × Visual Distance
+```
 
-$$\text{Torque} = \text{Weight} \times \text{Visual Distance}$$
-
-* **Weight**: The randomly generated mass value (**1–10 kg**).
-* **Visual Distance**: Normalized distance from the center $\left(\frac{\text{distance}}{\text{DISTANCE\_SCALE}}\right)$.
-* **DISTANCE\_SCALE**: **10** (Used to convert distance in pixels to physical units).
+* **Weight**: Random mass (1–10 kg)
+* **Visual Distance**: Normalized distance from the center: `distance / DISTANCE_SCALE`
+* **DISTANCE_SCALE**: 10
 
 ### Angle Calculation
-
 The plank's rotation angle is determined by the difference in torque:
+```
+TorqueDifference = RightTorque - LeftTorque
+Angle = TorqueDifference / TORQUE_DIVISOR
+```
 
-$$\text{TorqueDifference} = \text{RightTorque} - \text{LeftTorque}$$
-$$\text{Angle} = \frac{\text{TorqueDifference}}{\text{TORQUE\_DIVISOR}}$$
-
-* **TORQUE\_DIVISOR**: **10** (Controls rotation sensitivity).
-* **MAX\_ANGLE**: $\mathbf{\pm 30^\circ}$ (Sets the maximum rotation limit).
+* **TORQUE_DIVISOR**: **10** (Controls rotation sensitivity)
+* **MAX_ANGLE**: **±30°** (Sets the maximum rotation limit)
 
 ---
 
