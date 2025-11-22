@@ -265,6 +265,23 @@
             white-space: nowrap;
         }
 
+        @keyframes fallDown {
+            0% {
+                bottom: 350px;
+                opacity: 0;
+                transform: translateX(-50%) scale(0.8);
+            }
+
+            100% {
+                bottom: 14px;
+                opacity: 1;
+                transform: translateX(-50%) scale(1);
+            }
+        }
+
+        .weight-object.falling {
+            animation: fallDown 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
 
         /* --- LOG SECTION --- */
 
@@ -408,6 +425,7 @@
         const nextWeightEl = document.getElementById('next-weight');
         const logContainerEl = document.getElementById('log-container');
         const resetButtonEl = document.getElementById('reset-button');
+        const logEmptyMessage = document.getElementById('log-empty-message');
 
 
         // ============================================================================
@@ -587,11 +605,18 @@
         }
 
         // Create weight object element
-        function createWeightElement(object) {
+        function createWeightElement(object, isNew = false) {
             const element = document.createElement('div');// Create object element
             element.className = 'weight-object';
+            if (isNew) {
+                element.classList.add('falling');
+            }
             element.style.backgroundColor = object.color;// Set background color
             element.style.left = `calc(50% + ${object.rawDistance}px)`;// Position based on distance from center
+
+            const size = BASE_SIZE + (object.weight * SIZE_MULTIPLIER);// Size based on weight
+            element.style.width = `${size}px`;
+            element.style.height = `${size}px`;
 
             element.innerHTML = `
                 ${object.weight}
@@ -602,9 +627,11 @@
         }
 
         // Render all weight objects
-        function renderWeightObjects() {
-            for (const object of objects) {
-                const element = createWeightElement(object);
+        function renderWeightObjects(isNewWeight = false) {
+            for (let i = 0; i < objects.length; i++) {
+                const object = objects[i];
+                const isNew = isNewWeight && i === objects.length - 1;
+                const element = createWeightElement(object, isNew);
                 plankEl.appendChild(element);
             }
         }
@@ -645,6 +672,14 @@
                 .sort((a, b) => b.id - a.id)
                 .slice(0, MAX_LOG_ENTRIES);
 
+            if (objects.length > 0) {
+                // hide empty message
+                logEmptyMessage.style.display = 'none';
+            } else {
+                // show empty message
+                logEmptyMessage.style.display = 'block';
+            }
+
             for (const object of sortedObjects) {
                 const entry = createLogEntry(object);
                 logContainerEl.appendChild(entry);
@@ -653,16 +688,45 @@
             logContainerEl.scrollTop = 0;
         }
 
-        function render() {
+        function render(isNewWeight = false) {
 
             clearWeightObjects();
-            renderWeightObjects();
+            renderWeightObjects(isNewWeight);
 
             const totals = calculateTotals();
             const angle = calculateAngle(totals);
-            plankEl.style.transform = `translate(-50%, 0) rotate(${angle}deg)`;
 
-            updateStats(totals, angle);
+            // If a new weight was added, animate the fall first
+            if (isNewWeight) {
+                // Keep current angle during fall animation
+                const currentAngle = getCurrentRotation(plankEl);
+                plankEl.style.transform = `translate(-50%, 0) rotate(${currentAngle}deg)`;
+
+                
+                // Plank will rotate after animation
+                updateStats(totals, angle);
+
+                // Find the newly added weight element and wait for animation to finish
+                const weightElements = plankEl.querySelectorAll('.weight-object');
+                const newWeightElement = weightElements[weightElements.length - 1];
+
+                if (newWeightElement) {
+                    const handleAnimationEnd = () => {
+                        // Update plank rotation after weight lands
+                        plankEl.style.transform = `translate(-50%, 0) rotate(${angle}deg)`;
+                        newWeightElement.removeEventListener('animationend', handleAnimationEnd);
+                    };
+                    newWeightElement.addEventListener('animationend', handleAnimationEnd);
+                } else {
+                    // Fallback: update immediately if element not found
+                    plankEl.style.transform = `translate(-50%, 0) rotate(${angle}deg)`;
+                }
+            } else {
+                // For existing weights, update immediately
+                plankEl.style.transform = `translate(-50%, 0) rotate(${angle}deg)`;
+                updateStats(totals, angle);
+            }
+
             renderLogEntries();
         }
 
@@ -680,12 +744,14 @@
             removePreview();
         }
 
+
         // Click on plank to add weight
         function handlePlankClick(event) {
             removePreview();
 
             const distanceFromCenter = calculateDistanceFromEvent(event);
             const newObject = {
+                id: Date.now(),
                 weight: nextWeight,
                 distance: Math.abs(distanceFromCenter),
                 rawDistance: distanceFromCenter,
@@ -696,7 +762,7 @@
             nextWeight = generateRandomWeight();
 
             saveState();
-            render();
+            render(true);
             updateNextWeightDisplay();
         }
 
