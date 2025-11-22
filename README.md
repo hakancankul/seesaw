@@ -73,17 +73,13 @@ I calculated the scale factor and multiplied it by the current distance value to
 const scaleFactor = 1 / Math.cos(radians); // Calculate scale factor based on rotation
 distanceFromCenter = distanceFromCenter * scaleFactor; // Adjust distance based on rotation
 ```
-It was actually mostly correct, but I still trimmed the distance we could place the plank object from the ends to make it 100%.
-```javascript
-//Actural Horizontal Distance = (Screen Horizontal Distance) / cosθ
-const scaleFactor = 1 / Math.cos(radians); // Calculate scale factor based on rotation
-distanceFromCenter = distanceFromCenter * scaleFactor; // Adjust distance based on rotation
-```
-Actually, it was mostly correct, but I still clamped the distance we could place the plank object from the ends to make it 100%.
 
+Actually, it was mostly correct, but I still clamped the distance we could place the plank object from the ends to make it 100%.
 ```javascript
 const maxDistance = (plankEl.offsetWidth / 2) - 20;
 if (distanceFromCenter > maxDistance) distanceFromCenter = maxDistance;
 if (distanceFromCenter < -maxDistance) distanceFromCenter = -maxDistance;
 ```
+
+
 
